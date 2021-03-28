@@ -1,0 +1,60 @@
+---
+title: "SoupX"
+output: html_document
+---
+title: "SoupX for CM1_2"
+output: html_document
+---
+```{r}
+library(SoupX)
+library(Seurat)
+library(ggplot2)
+library(DropletUtils)
+library(dplyr)
+```
+Load 10X Data to SoupX and Seurat
+```{r}
+DataDir = c('G://covid19scRNAseq/CM1_2/outs', 'G://covid19scRNAseq/CM1_2/outs/filtered_feature_bc_matrix')
+sc = load10X(DataDir[1])
+seu <- Read10X(DataDir[2])
+```
+running seurat, set up cluster, adjust count matrix
+```{r}
+seu <- CreateSeuratObject(counts = seu, project = "cm1_2")
+seu <- SCTransform(object = seu, verbose = T)
+seu <- RunPCA(object = seu, verbose = T)
+seu <- RunUMAP(object = seu, dims = 1:30,verbose = T)
+seu <- FindNeighbors(object = seu, dims = 1:30, verbose = T)
+seu <- FindClusters(object = seu, resolution = 0.5, verbose = T)
+DimPlot(seu)
+FeaturePlot(seu, features=c("HBA2", "HBB"), max.cutoff="q95") 
+Cluster <- seu$seurat_clusters
+sc = setClusters(sc,Cluster)
+sc = autoEstCont(sc)
+out = adjustCounts(sc)
+```
+rerun Seurat for adjusted count matrix, check adjusted result
+```{r}
+seu2 <- CreateSeuratObject(counts = out, project = "cm1_2")
+seu2 <- SCTransform(object = seu2, verbose = T)
+seu2 <- RunPCA(object = seu2, verbose = T)
+seu2 <- RunUMAP(object = seu2, dims = 1:30,verbose = T)
+seu2 <- FindNeighbors(object = seu2, dims = 1:30, verbose = T)
+seu2 <- FindClusters(object = seu2, resolution = 0.5, verbose = T)
+DimPlot(seu2)
+FeaturePlot(seu2, features=c("HBA2", "HBB"), max.cutoff="q95")
+```
+save SoupX adjust counted matrix
+
+```{r}
+write10xCounts('G://covid19scRNAseq/CM1_2/outs/desoup5', out)
+```
+
+
+
+
+
+
+
+
+
